@@ -6,39 +6,19 @@
 namespace fea {
 // Specialize this, or provide begin() and end() on your node to get children
 // iterators.
-template <class Iter>
-inline std::pair<Iter, Iter> children_range(Iter parent) {
+template <class InputIt>
+inline std::pair<InputIt, InputIt> children_range(InputIt parent) {
 	return { parent->begin(), parent->end() };
 }
-
-namespace detail {
-template <class Func>
-struct scope_guard {
-	scope_guard(Func func)
-			: _func(func) {
-	}
-	~scope_guard() {
-		_func();
-	}
-
-private:
-	Func _func;
-};
-
-template <class Func>
-decltype(auto) make_guard(Func func) {
-	return scope_guard<Func>(func);
-}
-} // namespace detail
 
 // Traditional depth first recursion.
 // Starts at the provided node.
 // Fills out with depth first ordered iterators.
 // CullPredicate is a predicate function which accepts an iterator, and returns
 // true if the provided node and its sub-tree should be culled.
-template <class Iter, class CullPredicate>
+template <class InputIt, class CullPredicate>
 inline void recurse_depth_hierarchy(
-		Iter node, std::vector<Iter>* out, CullPredicate cull_pred) {
+		InputIt node, std::vector<InputIt>* out, CullPredicate cull_pred) {
 	if (cull_pred(node)) {
 		return;
 	}
@@ -46,7 +26,7 @@ inline void recurse_depth_hierarchy(
 	out->push_back(node);
 
 	using fea::children_range;
-	std::pair<Iter, Iter> range = children_range(node);
+	std::pair<InputIt, InputIt> range = children_range(node);
 
 	for (auto it = range.first; it != range.second; ++it) {
 		recurse_depth_hierarchy(it, out, cull_pred);
@@ -56,17 +36,17 @@ inline void recurse_depth_hierarchy(
 // Traditional depth first recursion.
 // Starts at the provided node.
 // Fills out with depth first ordered iterators.
-template <class Iter>
-inline void recurse_depth_hierarchy(Iter node, std::vector<Iter>* out) {
-	recurse_depth_hierarchy(node, out, [](Iter) { return false; });
+template <class InputIt>
+inline void recurse_depth_hierarchy(InputIt node, std::vector<InputIt>* out) {
+	recurse_depth_hierarchy(node, out, [](InputIt) { return false; });
 }
 
 
-template <class Iter, class CullPredicate>
-inline std::vector<Iter> flat_depth_hierarchy(
-		Iter root, CullPredicate cull_pred) {
-	std::vector<Iter> ret;
-	std::vector<Iter> waiting;
+template <class InputIt, class CullPredicate>
+inline std::vector<InputIt> flat_depth_hierarchy(
+		InputIt root, CullPredicate cull_pred) {
+	std::vector<InputIt> ret;
+	std::vector<InputIt> waiting;
 
 	if (cull_pred(root)) {
 		return ret;
@@ -76,7 +56,7 @@ inline std::vector<Iter> flat_depth_hierarchy(
 
 	for (size_t i = 0; i < ret.size(); ++i) {
 		using fea::children_range;
-		std::pair<Iter, Iter> range = children_range(ret[i]);
+		std::pair<InputIt, InputIt> range = children_range(ret[i]);
 
 		if (range.first == range.second) {
 			if (!waiting.empty()) {
@@ -91,11 +71,11 @@ inline std::vector<Iter> flat_depth_hierarchy(
 			ret.push_back(range.first);
 		}
 
-		std::reverse_iterator<Iter> rbegin{ range.second };
-		std::reverse_iterator<Iter> rend{ ++range.first };
+		std::reverse_iterator<InputIt> rbegin{ range.second };
+		std::reverse_iterator<InputIt> rend{ ++range.first };
 
 		for (auto it = rbegin; it != rend; ++it) {
-			Iter real_it = it.base();
+			InputIt real_it = it.base();
 			waiting.push_back(--real_it);
 		}
 
@@ -110,15 +90,16 @@ inline std::vector<Iter> flat_depth_hierarchy(
 	return ret;
 }
 
-template <class Iter>
-inline std::vector<Iter> flat_depth_hierarchy(Iter root) {
-	return flat_depth_hierarchy(root, [](Iter) { return false; });
+template <class InputIt>
+inline std::vector<InputIt> flat_depth_hierarchy(InputIt root) {
+	return flat_depth_hierarchy(root, [](InputIt) { return false; });
 }
 
 
-template <class Iter, class CullPredicate>
-inline std::vector<Iter> breadth_hierarchy(Iter root, CullPredicate cull_pred) {
-	std::vector<Iter> ret;
+template <class InputIt, class CullPredicate>
+inline std::vector<InputIt> breadth_hierarchy(
+		InputIt root, CullPredicate cull_pred) {
+	std::vector<InputIt> ret;
 	if (cull_pred(root)) {
 		return ret;
 	}
@@ -127,9 +108,9 @@ inline std::vector<Iter> breadth_hierarchy(Iter root, CullPredicate cull_pred) {
 
 	for (size_t i = 0; i < ret.size(); ++i) {
 		using fea::children_range;
-		std::pair<Iter, Iter> range = children_range(ret[i]);
+		std::pair<InputIt, InputIt> range = children_range(ret[i]);
 
-		for (Iter it = range.first; it != range.second; ++it) {
+		for (InputIt it = range.first; it != range.second; ++it) {
 			if (cull_pred(it)) {
 				continue;
 			}
@@ -141,45 +122,45 @@ inline std::vector<Iter> breadth_hierarchy(Iter root, CullPredicate cull_pred) {
 	return ret;
 }
 
-template <class Iter>
-inline std::vector<Iter> breadth_hierarchy(Iter root) {
-	return breadth_hierarchy(root, [](Iter) { return false; });
-
-	// std::vector<Iter> ret;
-	// ret.push_back(root);
-
-	// for (size_t i = 0; i < ret.size(); ++i) {
-	//	using fea::children_range;
-	//	std::pair<Iter, Iter> range = children_range(ret[i]);
-
-	//	for (Iter it = range.first; it != range.second; ++it) {
-	//		ret.push_back(it);
-	//	}
-	//}
-
-	// return ret;
+template <class InputIt>
+inline std::vector<InputIt> breadth_hierarchy(InputIt root) {
+	return breadth_hierarchy(root, [](InputIt) { return false; });
 }
 
-template <class Iter>
-inline std::vector<std::vector<Iter>> split_breadth_hierarchy(Iter root) {
-	std::vector<std::vector<Iter>> ret;
+
+template <class InputIt, class CullPredicate>
+inline std::vector<std::vector<InputIt>> split_breadth_hierarchy(
+		InputIt root, CullPredicate cull_pred) {
+	std::vector<std::vector<InputIt>> ret;
+	if (cull_pred(root)) {
+		return ret;
+	}
+
 	ret.push_back({ root });
 
 	for (size_t i = 0; i < ret.size(); ++i) {
 		for (size_t j = 0; j < ret[i].size(); ++j) {
 			using fea::children_range;
-			std::pair<Iter, Iter> range = children_range(ret[i][j]);
+			std::pair<InputIt, InputIt> range = children_range(ret[i][j]);
 
 			if (ret.size() == i + 1) {
 				ret.push_back({});
 			}
 
-			for (Iter it = range.first; it != range.second; ++it) {
+			for (InputIt it = range.first; it != range.second; ++it) {
+				if (cull_pred(it)) {
+					continue;
+				}
 				ret[i + 1].push_back(it);
 			}
 		}
 	}
 
 	return ret;
+}
+
+template <class InputIt>
+inline std::vector<std::vector<InputIt>> split_breadth_hierarchy(InputIt root) {
+	return split_breadth_hierarchy(root, [](InputIt) { return false; });
 }
 } // namespace fea

@@ -3,13 +3,13 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-template <class Iter>
-inline void test_breadth(Iter root) {
-	const Iter croot = root;
+template <class InputIt>
+inline void test_breadth(InputIt root) {
+	const InputIt croot = root;
 
 	// linear breadth non-const
 	{
-		std::vector<Iter> breadth_graph = fea::breadth_hierarchy(root);
+		std::vector<InputIt> breadth_graph = fea::breadth_hierarchy(root);
 
 		size_t next_breadth_start = 1;
 		for (size_t i = 0; i < breadth_graph.size(); ++i) {
@@ -63,11 +63,11 @@ inline void test_breadth(Iter root) {
 
 	// split breadth non-const
 	{
-		std::vector<std::vector<Iter>> split_breadth_graph
+		std::vector<std::vector<InputIt>> split_breadth_graph
 				= fea::split_breadth_hierarchy(root);
 
 		for (size_t i = 0; i < split_breadth_graph.size(); ++i) {
-			std::vector<Iter>& vec = split_breadth_graph[i];
+			std::vector<InputIt>& vec = split_breadth_graph[i];
 
 			size_t next_breadth_start = 0;
 
@@ -127,15 +127,15 @@ inline void test_breadth(Iter root) {
 	}
 }
 
-template <class Iter>
-inline void test_depth(Iter root) {
-	const Iter croot = root;
+template <class InputIt>
+inline void test_depth(InputIt root) {
+	const InputIt croot = root;
 
 	// non-const
 	{
-		std::vector<Iter> depth_graph = fea::flat_depth_hierarchy(root);
+		std::vector<InputIt> depth_graph = fea::flat_depth_hierarchy(root);
 
-		std::vector<Iter> recursed_depth_graph;
+		std::vector<InputIt> recursed_depth_graph;
 		fea::recurse_depth_hierarchy(root, &recursed_depth_graph);
 
 		EXPECT_EQ(depth_graph.size(), recursed_depth_graph.size());
