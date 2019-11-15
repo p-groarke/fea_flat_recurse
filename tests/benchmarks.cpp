@@ -1,4 +1,5 @@
 #include "global.hpp"
+#include "objs.hpp"
 
 #include <array>
 #include <bench_util/bench_util.h>
@@ -7,30 +8,10 @@
 #include <gtest/gtest.h>
 #include <random>
 #include <thread>
-#include <vector>
 
 #if defined(NDEBUG)
 
-namespace {
-struct small_obj {
-	void create_graph(const size_t max_depth, const size_t num_children,
-			const size_t depth = 0) {
-
-		if (depth == max_depth - 1)
-			return;
-
-		children.resize(num_children);
-
-		for (size_t i = 0; i < num_children; ++i) {
-			// children.push_back({});
-			children[i].create_graph(max_depth, num_children, depth + 1);
-		}
-	}
-
-	std::vector<small_obj> children;
-	// std::array<char, 512> data{};
-};
-} // namespace
+namespace {} // namespace
 
 namespace fea {
 
@@ -64,7 +45,6 @@ void reserve_split_vec(
 }
 
 TEST(flat_recurse, small_obj) {
-
 	{
 		size_t depth = 25;
 		size_t width = 2;
@@ -86,7 +66,7 @@ TEST(flat_recurse, small_obj) {
 		suite.title(title.c_str());
 		suite.benchmark(
 				"recursion (depth)",
-				[&]() { fea::recurse_depth_hierarchy(&root, &out); }, 5,
+				[&]() { fea::gather_depth_graph(&root, &out); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -94,7 +74,7 @@ TEST(flat_recurse, small_obj) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		suite.benchmark(
 				"flat (depth)",
-				[&]() { out = fea::flat_depth_hierarchy(&root); }, 5,
+				[&]() { out = fea::gather_depth_graph_flat(&root); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -102,7 +82,7 @@ TEST(flat_recurse, small_obj) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		suite.benchmark(
 				"flat (breadth)",
-				[&]() { out = fea::breadth_hierarchy(&root); }, 5,
+				[&]() { out = fea::gather_breadth_graph(&root); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -110,7 +90,8 @@ TEST(flat_recurse, small_obj) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		suite.benchmark(
 				"flat (split breadth)",
-				[&]() { out_split = fea::split_breadth_hierarchy(&root); }, 5,
+				[&]() { out_split = fea::gather_staged_breadth_graph(&root); },
+				5,
 				[&]() {
 					out_split = {};
 					out_split.shrink_to_fit();
@@ -141,7 +122,7 @@ TEST(flat_recurse, small_obj) {
 		suite.title(title.c_str());
 		suite.benchmark(
 				"recursion (depth)",
-				[&]() { fea::recurse_depth_hierarchy(&root, &out); }, 5,
+				[&]() { fea::gather_depth_graph(&root, &out); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -149,7 +130,7 @@ TEST(flat_recurse, small_obj) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		suite.benchmark(
 				"flat (depth)",
-				[&]() { out = fea::flat_depth_hierarchy(&root); }, 5,
+				[&]() { out = fea::gather_depth_graph_flat(&root); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -157,7 +138,7 @@ TEST(flat_recurse, small_obj) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		suite.benchmark(
 				"flat (breadth)",
-				[&]() { out = fea::breadth_hierarchy(&root); }, 5,
+				[&]() { out = fea::gather_breadth_graph(&root); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -165,7 +146,8 @@ TEST(flat_recurse, small_obj) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 		suite.benchmark(
 				"flat (split breadth)",
-				[&]() { out_split = fea::split_breadth_hierarchy(&root); }, 5,
+				[&]() { out_split = fea::gather_staged_breadth_graph(&root); },
+				5,
 				[&]() {
 					out_split = {};
 					out_split.shrink_to_fit();

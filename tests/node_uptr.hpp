@@ -24,6 +24,11 @@ struct node_uptr {
 			count = dis(gen);
 		}
 
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::bernoulli_distribution d(0.5);
+		_disabled = d(gen);
+
 		for (size_t i = 0; i < count; ++i) {
 			_children.push_back(std::make_unique<node_uptr>(this));
 
@@ -43,10 +48,15 @@ struct node_uptr {
 		return _id == other._id;
 	}
 
+	bool disabled() const {
+		return _disabled;
+	}
+
 private:
 	size_t _id = std::numeric_limits<size_t>::max();
 	node_uptr* _parent = nullptr; // observer_ptr
 	std::vector<std::unique_ptr<node_uptr>> _children;
+	bool _disabled = false;
 
 	static size_t _id_counter;
 };

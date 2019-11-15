@@ -44,28 +44,44 @@ TEST(flat_recurse, breadth_basics) {
 		SCOPED_TRACE("breadth_basics not random");
 		test_breadth(&root);
 
-		std::vector<std::unique_ptr<node_uptr>*> vec
-				= fea::breadth_hierarchy(&root);
-		std::vector<std::unique_ptr<node_uptr>*> ref_vec;
-		fea::recurse_depth_hierarchy(&root, &ref_vec);
+		// predicate
+		auto vec = fea::gather_breadth_graph(
+				&root, [](auto node) { return node->get()->disabled(); });
+		for (auto it : vec) {
+			EXPECT_FALSE(it->get()->disabled());
+		}
 
-		EXPECT_EQ(vec.size(), ref_vec.size());
+		auto split_vec = fea::gather_staged_breadth_graph(
+				&root, [](auto node) { return !node->get()->disabled(); });
+		for (auto& v : split_vec) {
+			for (auto it : v) {
+				EXPECT_TRUE(it->get()->disabled());
+			}
+		}
 	}
 
 	// random children size
 	{
 		std::unique_ptr<node_uptr> root = std::make_unique<node_uptr>(nullptr);
-		root->create_graph(9, 3, true);
+		root->create_graph(9, 10, true);
 
 		SCOPED_TRACE("breadth_basics random");
 		test_breadth(&root);
 
-		std::vector<std::unique_ptr<node_uptr>*> vec
-				= fea::breadth_hierarchy(&root);
-		std::vector<std::unique_ptr<node_uptr>*> ref_vec;
-		fea::recurse_depth_hierarchy(&root, &ref_vec);
+		// predicate
+		auto vec = fea::gather_breadth_graph(
+				&root, [](auto node) { return node->get()->disabled(); });
+		for (auto it : vec) {
+			EXPECT_FALSE(it->get()->disabled());
+		}
 
-		EXPECT_EQ(vec.size(), ref_vec.size());
+		auto split_vec = fea::gather_staged_breadth_graph(
+				&root, [](auto node) { return !node->get()->disabled(); });
+		for (auto& v : split_vec) {
+			for (auto it : v) {
+				EXPECT_TRUE(it->get()->disabled());
+			}
+		}
 	}
 }
 
@@ -77,6 +93,20 @@ TEST(flat_recurse, depth_basics) {
 
 		SCOPED_TRACE("depth_basics not random");
 		test_depth(&root);
+
+		// predicate
+		std::vector<std::unique_ptr<node_uptr>*> vec;
+		fea::gather_depth_graph(
+				&root, &vec, [](auto node) { return node->get()->disabled(); });
+		for (auto it : vec) {
+			EXPECT_FALSE(it->get()->disabled());
+		}
+
+		auto vec2 = fea::gather_depth_graph_flat(
+				&root, [](auto node) { return !node->get()->disabled(); });
+		for (auto it : vec2) {
+			EXPECT_TRUE(it->get()->disabled());
+		}
 	}
 
 	// random test
@@ -86,6 +116,20 @@ TEST(flat_recurse, depth_basics) {
 
 		SCOPED_TRACE("depth_basics random");
 		test_depth(&root);
+
+		// predicate
+		std::vector<std::unique_ptr<node_uptr>*> vec;
+		fea::gather_depth_graph(
+				&root, &vec, [](auto node) { return node->get()->disabled(); });
+		for (auto it : vec) {
+			EXPECT_FALSE(it->get()->disabled());
+		}
+
+		auto vec2 = fea::gather_depth_graph_flat(
+				&root, [](auto node) { return !node->get()->disabled(); });
+		for (auto it : vec2) {
+			EXPECT_TRUE(it->get()->disabled());
+		}
 	}
 }
 
