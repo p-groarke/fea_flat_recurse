@@ -1,5 +1,5 @@
 #include "global.hpp"
-#include "objs.hpp"
+#include "small_obj.hpp"
 
 #include <array>
 #include <bench_util/bench_util.h>

@@ -70,9 +70,17 @@ bool node_uptr::disabled() const {
 	return _disabled;
 }
 
-// void node_uptr::disabled(bool disabled) {
-//	_disabled = disabled;
-//}
+void node_uptr::disabled(bool disabled) {
+	_disabled = disabled;
+}
+
+const node_uptr* node_uptr::parent() const {
+	return _parent;
+}
+
+node_uptr* node_uptr::parent() {
+	return _parent;
+}
 
 bool node_uptr::operator==(const node_uptr& other) const {
 	return _id == other._id;
@@ -80,60 +88,87 @@ bool node_uptr::operator==(const node_uptr& other) const {
 
 
 namespace {
-TEST(flat_recurse, node_uptr_breadth) {
+TEST(flat_recurse, node_uptr_deeper) {
+	std::unique_ptr<node_uptr> root = std::make_unique<node_uptr>(nullptr);
+	root->create_graph(8, 6);
+
+	SCOPED_TRACE("node_uptr test breadth");
+	test_breadth(&root);
+
+	SCOPED_TRACE("node_uptr test depth");
+	test_depth(&root);
+
+	// cull disabled
 	{
-		std::unique_ptr<node_uptr> root = std::make_unique<node_uptr>(nullptr);
-		root->create_graph(8, 6);
-
-		SCOPED_TRACE("breadth_basics not random");
-		test_breadth(&root);
-
-		// predicate
-		auto vec = fea::gather_breadth_graph(
-				&root, [](auto node) { return node->get()->disabled(); });
-		for (auto it : vec) {
-			EXPECT_FALSE(it->get()->disabled());
-		}
-
-		auto split_vec = fea::gather_staged_breadth_graph(
-				&root, [](auto node) { return !node->get()->disabled(); });
-		for (auto& v : split_vec) {
-			for (auto it : v) {
-				EXPECT_TRUE(it->get()->disabled());
+		auto cull_pred = [](auto node) { return node->get()->disabled(); };
+		auto parent_cull_pred = [=](auto node) {
+			if (node->get()->parent() == nullptr) {
+				return cull_pred(node);
 			}
-		}
+			return node->get()->parent()->disabled();
+		};
+
+		root->disabled(false);
+		SCOPED_TRACE("node_uptr test cull disabled");
+		test_culling(&root, cull_pred, parent_cull_pred);
+	}
+
+	// cull enabled
+	{
+		auto cull_pred
+				= [](auto node) { return node->get()->disabled() == false; };
+		auto parent_cull_pred = [=](auto node) {
+			if (node->get()->parent() == nullptr) {
+				return cull_pred(node);
+			}
+			return node->get()->parent()->disabled() == false;
+		};
+
+		root->disabled(true);
+		SCOPED_TRACE("node_uptr test cull enabled");
+		test_culling(&root, cull_pred, parent_cull_pred);
 	}
 }
 
-TEST(flat_recurse, node_uptr_depth) {
-	// basic test
+TEST(flat_recurse, node_uptr_wider) {
+	std::unique_ptr<node_uptr> root = std::make_unique<node_uptr>(nullptr);
+	root->create_graph(2, 50);
+
+	SCOPED_TRACE("node_uptr test breadth");
+	test_breadth(&root);
+
+	SCOPED_TRACE("node_uptr test depth");
+	test_depth(&root);
+
+	// cull disabled
 	{
-		std::unique_ptr<node_uptr> root = std::make_unique<node_uptr>(nullptr);
-		root->create_graph(2, 50);
+		auto cull_pred = [](auto node) { return node->get()->disabled(); };
+		auto parent_cull_pred = [=](auto node) {
+			if (node->get()->parent() == nullptr) {
+				return cull_pred(node);
+			}
+			return node->get()->parent()->disabled();
+		};
 
-		SCOPED_TRACE("depth_basics not random");
-		test_depth(&root);
+		root->disabled(false);
+		SCOPED_TRACE("node_uptr test cull disabled");
+		test_culling(&root, cull_pred, parent_cull_pred);
+	}
 
-		// cull disabled
-		std::vector<std::unique_ptr<node_uptr>*> vec;
-		fea::gather_depth_graph_recursive(
-				&root, &vec, [](auto node) { return node->get()->disabled(); });
-		for (auto it : vec) {
-			// if (it->get()->disabled()) {
-			//	printf("");
-			//}
-			EXPECT_FALSE(it->get()->disabled());
-		}
+	// cull enabled
+	{
+		auto cull_pred
+				= [](auto node) { return node->get()->disabled() == false; };
+		auto parent_cull_pred = [=](auto node) {
+			if (node->get()->parent() == nullptr) {
+				return cull_pred(node);
+			}
+			return node->get()->parent()->disabled() == false;
+		};
 
-		// cull enabled
-		auto vec2 = fea::gather_depth_graph_flat(&root,
-				[](auto node) { return node->get()->disabled() == false; });
-		for (auto it : vec2) {
-			// if (!it->get()->disabled()) {
-			//	printf("");
-			//}
-			EXPECT_TRUE(it->get()->disabled());
-		}
+		root->disabled(true);
+		SCOPED_TRACE("node_uptr test cull enabled");
+		test_culling(&root, cull_pred, parent_cull_pred);
 	}
 }
 

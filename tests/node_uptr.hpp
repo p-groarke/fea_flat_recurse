@@ -15,8 +15,11 @@ struct node_uptr {
 
 	bool operator==(const node_uptr& other) const;
 
-	// void disabled(bool disabled);
+	void disabled(bool disabled);
 	bool disabled() const;
+
+	const node_uptr* parent() const;
+	node_uptr* parent();
 
 private:
 	size_t _id = std::numeric_limits<size_t>::max();

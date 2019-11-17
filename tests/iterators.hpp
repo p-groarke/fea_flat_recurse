@@ -3,10 +3,6 @@
 #include <fea_flat_recurse/fea_flat_recurse.hpp>
 #include <gtest/gtest.h>
 #include <iterator>
-#include <list>
-#include <unordered_set>
-#include <utility>
-#include <vector>
 
 template <class T>
 struct input_it {
