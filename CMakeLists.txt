@@ -76,7 +76,7 @@ if (${BUILD_TESTING})
 	set(TEST_NAME ${PROJECT_NAME}_tests)
 	file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp" "tests/*.c" "tests/*.hpp" "tests/*.h" "tests/*.tpp")
 	add_executable(${TEST_NAME} ${TEST_SOURCES})
-	# set_property(TARGET ${TEST_NAME} PROPERTY CXX_STANDARD 17)
+	# set_property(TARGET ${TEST_NAME} PROPERTY CXX_STANDARD 17) # simplify unit tests with if constexpr
 	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} CONAN_PKG::gtest)
 	gtest_discover_tests(${TEST_NAME})
 	add_dependencies(${TEST_NAME} ${PROJECT_NAME})

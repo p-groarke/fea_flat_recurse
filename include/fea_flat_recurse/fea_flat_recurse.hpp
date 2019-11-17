@@ -45,7 +45,7 @@ inline std::pair<InputIt, InputIt> children_range(InputIt parent) {
 
 // for_each
 
-// Traditional depth first recursion.
+// Traditional depth-first recursion.
 // Starts at the provided node.
 // Executes func on each node.
 // CullPredicate accepts an iterator and returns true if the node and its
@@ -67,7 +67,7 @@ inline void for_each_recursive_depth(
 	}
 }
 
-// Traditional depth first recursion.
+// Traditional depth-first recursion.
 // Starts at the provided node.
 // Executes func on each node.
 template <class InputIt, class Func, class CullPredicate>
@@ -76,26 +76,26 @@ inline void for_each_recursive_depth(InputIt root, Func func) {
 }
 
 
-// Flat depth first iteration.
+// Flat depth-first iteration.
 // Starts at the provided node.
 // Executes func on each node.
 // CullPredicate accepts an iterator and returns true if the node and its
 // sub-tree should be culled.
-template <class InputIt, class Func, class CullPredicate>
+template <class BidirIt, class Func, class CullPredicate>
 inline void for_each_flat_depth(
-		InputIt root, Func func, CullPredicate cull_pred) {
+		BidirIt root, Func func, CullPredicate cull_pred) {
 	if (cull_pred(root)) {
 		return;
 	}
 
-	InputIt current_node = root;
+	BidirIt current_node = root;
 	func(root);
 
-	std::vector<InputIt> waiting;
+	std::vector<BidirIt> waiting;
 
 	while (true) {
 		using fea::children_range;
-		std::pair<InputIt, InputIt> range = children_range(current_node);
+		std::pair<BidirIt, BidirIt> range = children_range(current_node);
 
 		if (range.first == range.second) {
 			if (!waiting.empty()) {
@@ -114,12 +114,15 @@ inline void for_each_flat_depth(
 			func(current_node);
 		}
 
-		std::reverse_iterator<InputIt> rbegin{ range.second };
-		std::reverse_iterator<InputIt> rend{ ++range.first };
+		std::reverse_iterator<BidirIt> rbegin{ range.second };
+		std::reverse_iterator<BidirIt> rend{ ++range.first };
 
 		for (auto it = rbegin; it != rend; ++it) {
-			InputIt real_it = it.base();
-			waiting.push_back(--real_it);
+			BidirIt real_it = it.base();
+			if (cull_pred(--real_it)) {
+				continue;
+			}
+			waiting.push_back(real_it);
 		}
 
 		if (cullit) {
@@ -134,62 +137,64 @@ inline void for_each_flat_depth(
 	}
 }
 
-// Flat depth first iteration.
+// Flat depth-first iteration.
 // Starts at the provided node.
 // Executes func on each node.
-template <class InputIt, class Func>
-inline void for_each_flat_depth(InputIt root, Func func) {
-	return for_each_flat_depth(root, func, [](InputIt) { return false; });
+template <class BidirIt, class Func>
+inline void for_each_flat_depth(BidirIt root, Func func) {
+	return for_each_flat_depth(root, func, [](BidirIt) { return false; });
 }
 
 
 // gather
 
-// Gathers nodes using a traditional depth first recursion.
+// Gathers nodes using a traditional depth-first recursion.
 // Starts at the provided node.
 // Fills out with depth first ordered iterators.
 // CullPredicate is a predicate function which accepts an iterator, and returns
 // true if the provided node and its sub-tree should be culled.
 template <class InputIt, class CullPredicate>
-inline void gather_depth_graph(
+inline void gather_depth_graph_recursive(
 		InputIt root, std::vector<InputIt>* out, CullPredicate cull_pred) {
 	return for_each_recursive_depth(
 			root, [&](InputIt node) { out->push_back(node); }, cull_pred);
 }
 
-// Gathers nodes using a traditional depth first recursion.
+// Gathers nodes using a traditional depth-first recursion.
 // Starts at the provided node.
 // Fills out with depth first ordered iterators.
 template <class InputIt>
-inline void gather_depth_graph(InputIt root, std::vector<InputIt>* out) {
-	return gather_depth_graph(root, out, [](InputIt) { return false; });
+inline void gather_depth_graph_recursive(
+		InputIt root, std::vector<InputIt>* out) {
+	return gather_depth_graph_recursive(
+			root, out, [](InputIt) { return false; });
 }
 
 
-// Gathers a depth first flat vector without recursing.
+// Gathers a depth-first flat vector without recursing.
 // Starts at the provided node.
 // Returns depth first ordered iterators.
 // CullPredicate is a predicate function which accepts an iterator, and returns
 // true if the provided node and its sub-tree should be culled.
-template <class InputIt, class CullPredicate>
-inline std::vector<InputIt> gather_depth_graph_flat(
-		InputIt root, CullPredicate cull_pred) {
-	std::vector<InputIt> ret;
+template <class BidirIt, class CullPredicate>
+inline std::vector<BidirIt> gather_depth_graph_flat(
+		BidirIt root, CullPredicate cull_pred) {
+	std::vector<BidirIt> ret;
 	for_each_flat_depth(
-			root, [&](InputIt node) { ret.push_back(node); }, cull_pred);
+			root, [&](BidirIt node) { ret.push_back(node); }, cull_pred);
 	return ret;
 }
 
-// Gathers a depth first flat vector without recursing.
+// Gathers a depth-first flat vector without recursing.
 // Starts at the provided node.
 // Returns depth first ordered iterators.
-template <class InputIt>
-inline std::vector<InputIt> gather_depth_graph_flat(InputIt root) {
-	return gather_depth_graph_flat(root, [](InputIt) { return false; });
+template <class BidirIt>
+inline std::vector<BidirIt> gather_depth_graph_flat(BidirIt root) {
+	return gather_depth_graph_flat(root, [](BidirIt) { return false; });
 }
 
 
-// Gathers a breadth first flat vector without recursing.
+// Gathers a breadth-first flat vector without recursing.
 // Starts at the provided node.
 // Returns breadth first ordered iterators.
 // CullPredicate is a predicate function which accepts an iterator, and returns
@@ -220,7 +225,7 @@ inline std::vector<InputIt> gather_breadth_graph(
 	return ret;
 }
 
-// Gathers a breadth first flat vector without recursing.
+// Gathers a breadth-first flat vector without recursing.
 // Starts at the provided node.
 // Returns breadth first ordered iterators.
 template <class InputIt>
@@ -229,7 +234,7 @@ inline std::vector<InputIt> gather_breadth_graph(InputIt root) {
 }
 
 
-// Flat breadth first iteration.
+// Flat breadth-first iteration.
 // Fills up a vector internally, use the gather function if you call this on the
 // same graph more than once!
 // Starts at the provided node.
@@ -244,7 +249,7 @@ inline void for_each_breadth(InputIt root, Func func, CullPredicate cull_pred) {
 	}
 }
 
-// Flat breadth first iteration.
+// Flat breadth-first iteration.
 // Fills up a vector internally, use the gather function if you call this on the
 // same graph more than once!
 // Starts at the provided node.
@@ -258,7 +263,7 @@ inline void for_each_breadth(InputIt root, Func func) {
 }
 
 
-// Gathers a breadth first vector of vector without recursing. Sub vectors are
+// Gathers a breadth-first vector of vector without recursing. Sub vectors are
 // the breadths. Useful for multithreading.
 // Starts at the provided node.
 // Returns vector of breadth iterator vectors.
@@ -295,7 +300,7 @@ inline std::vector<std::vector<InputIt>> gather_staged_breadth_graph(
 	return ret;
 }
 
-// Gathers a breadth first vector of vector without recursing. Sub vectors are
+// Gathers a breadth-first vector of vector without recursing. Sub vectors are
 // the breadths. Useful for multithreading.
 // Starts at the provided node.
 // Returns vector of breadth iterator vectors.

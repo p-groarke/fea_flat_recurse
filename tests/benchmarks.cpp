@@ -11,21 +11,6 @@
 
 #if defined(NDEBUG)
 
-namespace {} // namespace
-
-namespace fea {
-
-template <>
-inline std::pair<small_obj*, small_obj*> children_range(small_obj* parent) {
-	if (parent->children.empty()) {
-		return { nullptr, nullptr };
-	}
-
-	small_obj* beg = &parent->children.front();
-	return { beg, beg + parent->children.size() };
-}
-} // namespace fea
-
 namespace {
 size_t node_count(size_t depth, size_t width) {
 	size_t ret = 0;
@@ -66,7 +51,7 @@ TEST(flat_recurse, small_obj) {
 		suite.title(title.c_str());
 		suite.benchmark(
 				"recursion (depth)",
-				[&]() { fea::gather_depth_graph(&root, &out); }, 5,
+				[&]() { fea::gather_depth_graph_recursive(&root, &out); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();
@@ -122,7 +107,7 @@ TEST(flat_recurse, small_obj) {
 		suite.title(title.c_str());
 		suite.benchmark(
 				"recursion (depth)",
-				[&]() { fea::gather_depth_graph(&root, &out); }, 5,
+				[&]() { fea::gather_depth_graph_recursive(&root, &out); }, 5,
 				[&]() {
 					out = {};
 					out.shrink_to_fit();

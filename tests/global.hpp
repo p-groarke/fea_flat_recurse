@@ -1,6 +1,7 @@
 #pragma once
 #include <fea_flat_recurse/fea_flat_recurse.hpp>
 #include <gtest/gtest.h>
+#include <iterator>
 #include <memory>
 
 template <class InputIt>
@@ -8,7 +9,7 @@ inline void test_breadth(InputIt root) {
 	const InputIt croot = root;
 
 	std::vector<InputIt> ref_vec;
-	fea::gather_depth_graph(root, &ref_vec);
+	fea::gather_depth_graph_recursive(root, &ref_vec);
 
 	// linear breadth non-const
 	{
@@ -145,8 +146,9 @@ inline void test_breadth(InputIt root) {
 	}
 }
 
+namespace detail {
 template <class InputIt>
-inline void test_depth(InputIt root) {
+inline void test_depth_flat(InputIt root, std::bidirectional_iterator_tag) {
 	const InputIt croot = root;
 
 	// non-const
@@ -154,7 +156,7 @@ inline void test_depth(InputIt root) {
 		std::vector<InputIt> depth_graph = fea::gather_depth_graph_flat(root);
 
 		std::vector<InputIt> recursed_depth_graph;
-		fea::gather_depth_graph(root, &recursed_depth_graph);
+		fea::gather_depth_graph_recursive(root, &recursed_depth_graph);
 
 		EXPECT_EQ(depth_graph.size(), recursed_depth_graph.size());
 		EXPECT_EQ(depth_graph, recursed_depth_graph);
@@ -165,9 +167,141 @@ inline void test_depth(InputIt root) {
 		auto depth_graph = fea::gather_depth_graph_flat(croot);
 
 		decltype(depth_graph) recursed_depth_graph;
-		fea::gather_depth_graph(croot, &recursed_depth_graph);
+		fea::gather_depth_graph_recursive(croot, &recursed_depth_graph);
 
 		EXPECT_EQ(depth_graph.size(), recursed_depth_graph.size());
 		EXPECT_EQ(depth_graph, recursed_depth_graph);
+	}
+}
+
+template <class InputIt>
+inline void test_depth_flat(InputIt root, std::input_iterator_tag) {
+	const InputIt croot = root;
+
+	// non-const
+	{
+		std::vector<InputIt> breadth_graph = fea::gather_breadth_graph(root);
+
+		std::vector<InputIt> recursed_depth_graph;
+		fea::gather_depth_graph_recursive(root, &recursed_depth_graph);
+
+		EXPECT_EQ(breadth_graph.size(), recursed_depth_graph.size());
+		// EXPECT_EQ(depth_graph, recursed_depth_graph);
+	}
+
+	// const
+	{
+		auto breadth_graph = fea::gather_breadth_graph(croot);
+
+		decltype(breadth_graph) recursed_depth_graph;
+		fea::gather_depth_graph_recursive(croot, &recursed_depth_graph);
+
+		EXPECT_EQ(breadth_graph.size(), recursed_depth_graph.size());
+		// EXPECT_EQ(breadth_graph, recursed_depth_graph);
+	}
+}
+
+} // namespace detail
+
+template <class InputIt>
+inline void test_depth(InputIt root) {
+	detail::test_depth_flat(
+			root, std::iterator_traits<InputIt>::iterator_category());
+}
+
+namespace detail {
+
+template <class InputIt, class CullPred, class ParentCullPred>
+inline void test_culling_flat_depth(InputIt root, CullPred cull_pred,
+		ParentCullPred p_cull_pred, std::bidirectional_iterator_tag) {
+	std::vector<InputIt> depth_graph
+			= fea::gather_depth_graph_flat(root, cull_pred);
+	for (auto it : depth_graph) {
+		bool p = cull_pred(it);
+		bool pp = p_cull_pred(it);
+		EXPECT_FALSE(p);
+		EXPECT_FALSE(pp);
+	}
+}
+template <class InputIt, class CullPred, class ParentCullPred>
+inline void test_culling_flat_depth(
+		InputIt, CullPred, ParentCullPred, std::input_iterator_tag) {
+}
+} // namespace detail
+
+template <class InputIt, class CullPred, class ParentCullPred>
+inline void test_culling(
+		InputIt root, CullPred cull_pred, ParentCullPred p_cull_pred) {
+	const InputIt croot = root;
+
+	// non-const
+	{
+		std::vector<InputIt> breadth_graph
+				= fea::gather_breadth_graph(root, cull_pred);
+		for (auto it : breadth_graph) {
+			bool p = cull_pred(it);
+			bool pp = p_cull_pred(it);
+			EXPECT_FALSE(p);
+			EXPECT_FALSE(pp);
+		}
+
+		std::vector<std::vector<InputIt>> staged_breadth_graph
+				= fea::gather_staged_breadth_graph(root, cull_pred);
+		for (auto& v : staged_breadth_graph) {
+			for (auto it : v) {
+				bool p = cull_pred(it);
+				bool pp = p_cull_pred(it);
+				EXPECT_FALSE(p);
+				EXPECT_FALSE(pp);
+			}
+		}
+
+		std::vector<InputIt> recursed_depth_graph;
+		fea::gather_depth_graph_recursive(
+				root, &recursed_depth_graph, cull_pred);
+		for (auto it : recursed_depth_graph) {
+			bool p = cull_pred(it);
+			bool pp = p_cull_pred(it);
+			EXPECT_FALSE(p);
+			EXPECT_FALSE(pp);
+		}
+
+		detail::test_culling_flat_depth(root, cull_pred, p_cull_pred,
+				std::iterator_traits<InputIt>::iterator_category());
+	}
+
+	// non-const
+	{
+		auto breadth_graph = fea::gather_breadth_graph(croot, cull_pred);
+		for (auto it : breadth_graph) {
+			bool p = cull_pred(it);
+			bool pp = p_cull_pred(it);
+			EXPECT_FALSE(p);
+			EXPECT_FALSE(pp);
+		}
+
+		auto staged_breadth_graph
+				= fea::gather_staged_breadth_graph(croot, cull_pred);
+		for (auto& v : staged_breadth_graph) {
+			for (auto it : v) {
+				bool p = cull_pred(it);
+				bool pp = p_cull_pred(it);
+				EXPECT_FALSE(p);
+				EXPECT_FALSE(pp);
+			}
+		}
+
+		decltype(breadth_graph) recursed_depth_graph;
+		fea::gather_depth_graph_recursive(
+				croot, &recursed_depth_graph, cull_pred);
+		for (auto it : recursed_depth_graph) {
+			bool p = cull_pred(it);
+			bool pp = p_cull_pred(it);
+			EXPECT_FALSE(p);
+			EXPECT_FALSE(pp);
+		}
+
+		detail::test_culling_flat_depth(croot, cull_pred, p_cull_pred,
+				std::iterator_traits<InputIt>::iterator_category());
 	}
 }
