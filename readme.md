@@ -1,4 +1,7 @@
 # fea_flat_recurse
+[![Build Status](https://travis-ci.org/p-groarke/fea_flat_recurse.svg?branch=master)](https://travis-ci.org/p-groarke/fea_flat_recurse)
+[![Build status](https://ci.appveyor.com/api/projects/status/kw99c4io4f50n6en/branch/master?svg=true)](https://ci.appveyor.com/project/p-groarke/fea-flat-recurse/branch/master)
+
 Flat breadth and depth graph traversal/gathering functions.
 
 ## Examples
