@@ -206,7 +206,7 @@ inline void test_depth_flat(InputIt root, std::input_iterator_tag) {
 template <class InputIt>
 inline void test_depth(InputIt root) {
 	detail::test_depth_flat(
-			root, std::iterator_traits<InputIt>::iterator_category());
+			root, typename std::iterator_traits<InputIt>::iterator_category{});
 }
 
 namespace detail {
@@ -267,7 +267,7 @@ inline void test_culling(
 		}
 
 		detail::test_culling_flat_depth(root, cull_pred, p_cull_pred,
-				std::iterator_traits<InputIt>::iterator_category());
+				typename std::iterator_traits<InputIt>::iterator_category{});
 	}
 
 	// non-const
@@ -302,6 +302,6 @@ inline void test_culling(
 		}
 
 		detail::test_culling_flat_depth(croot, cull_pred, p_cull_pred,
-				std::iterator_traits<InputIt>::iterator_category());
+				typename std::iterator_traits<InputIt>::iterator_category{});
 	}
 }

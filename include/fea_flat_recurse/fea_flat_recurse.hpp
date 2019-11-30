@@ -88,15 +88,18 @@ inline void for_each_flat_depth(
 		BidirIt root, Func func, CullPredicate cull_pred) {
 	static_assert(
 			!std::is_same<std::input_iterator_tag,
-					std::iterator_traits<BidirIt>::iterator_category>::value,
+					typename std::iterator_traits<BidirIt>::iterator_category>::
+					value,
 			"for_each_flat_depth : iterators must be at minimum bidirectional");
 	static_assert(
 			!std::is_same<std::output_iterator_tag,
-					std::iterator_traits<BidirIt>::iterator_category>::value,
+					typename std::iterator_traits<BidirIt>::iterator_category>::
+					value,
 			"for_each_flat_depth : iterators must be at minimum bidirectional");
 	static_assert(
 			!std::is_same<std::forward_iterator_tag,
-					std::iterator_traits<BidirIt>::iterator_category>::value,
+					typename std::iterator_traits<BidirIt>::iterator_category>::
+					value,
 			"for_each_flat_depth : iterators must be at minimum bidirectional");
 
 	if (cull_pred(root)) {

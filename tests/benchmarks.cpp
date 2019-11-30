@@ -11,6 +11,18 @@
 
 #if defined(NDEBUG)
 
+namespace fea {
+template <>
+inline std::pair<small_obj*, small_obj*> children_range(small_obj* parent) {
+	if (parent->children.empty()) {
+		return { nullptr, nullptr };
+	}
+
+	small_obj* beg = &parent->children.front();
+	return { beg, beg + parent->children.size() };
+}
+} // namespace fea
+
 namespace {
 size_t node_count(size_t depth, size_t width) {
 	size_t ret = 0;
@@ -29,12 +41,13 @@ void reserve_split_vec(
 	}
 }
 
-TEST(flat_recurse, small_obj) {
+TEST(flat_recurse, benchmarks) {
 	{
 		size_t depth = 25;
 		size_t width = 2;
 		size_t num_nodes = node_count(depth, width);
-		small_obj root;
+		// std::vector<small_obj> root_vec{ { nullptr } };
+		small_obj root{ nullptr };
 		root.create_graph(depth, width);
 
 		// Easier profiling
@@ -90,7 +103,7 @@ TEST(flat_recurse, small_obj) {
 		size_t depth = 5;
 		size_t width = 75;
 		size_t num_nodes = node_count(depth, width);
-		small_obj root;
+		small_obj root{ nullptr };
 		root.create_graph(depth, width);
 
 		// Easier profiling
