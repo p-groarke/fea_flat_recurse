@@ -82,7 +82,7 @@ if (${BUILD_TESTING})
 	add_dependencies(${TEST_NAME} ${PROJECT_NAME})
 
 	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
@@ -104,6 +104,7 @@ if (${BUILD_TESTING})
 		CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release
 			-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
 			-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
+			-DBUILD_TESTING=Off
 		UPDATE_COMMAND ""
 	)
 

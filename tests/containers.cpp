@@ -5,6 +5,10 @@
 #include <list>
 #include <unordered_map>
 
+#if (defined(__GNUC__) && !defined(__clang__))
+#define GCC_COMPILER
+#endif
+
 namespace {
 size_t disable_counter = 0;
 
@@ -54,7 +58,12 @@ struct list_node {
 	list_node* parent = nullptr;
 	bool disabled = false;
 };
+} // namespace
 
+// gcc unordered_map implementation is broken.
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53339
+#if !defined(GCC_COMPILER)
+namespace {
 size_t id_counter = 0;
 struct umap_node {
 	using iter = typename std::unordered_map<size_t, umap_node>::iterator;
@@ -111,10 +120,10 @@ namespace fea {
 template <>
 inline std::pair<umap_node::iter, umap_node::iter> children_range(
 		umap_node::iter parent) {
-
 	return { parent->second.children.begin(), parent->second.children.end() };
 }
 } // namespace fea
+#endif
 
 namespace {
 TEST(flat_recurse, list_iters) {
@@ -161,6 +170,7 @@ TEST(flat_recurse, list_iters) {
 	}
 }
 
+#if !defined(GCC_COMPILER)
 TEST(flat_recurse, umap_iters) {
 	umap_node n{ nullptr };
 	std::unordered_map<size_t, umap_node> root_vec;
@@ -207,4 +217,5 @@ TEST(flat_recurse, umap_iters) {
 		test_culling(root_it, cull_pred, parent_cull_pred);
 	}
 }
+#endif
 } // namespace
