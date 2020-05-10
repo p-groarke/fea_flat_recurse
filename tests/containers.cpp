@@ -1,4 +1,4 @@
-#include "global.hpp"
+﻿#include "global.hpp"
 
 #include <fea_flat_recurse/fea_flat_recurse.hpp>
 #include <gtest/gtest.h>
@@ -60,7 +60,7 @@ struct list_node {
 };
 } // namespace
 
-// gcc unordered_map implementation is broken.
+// gcc unordered_map implementation doesn't work here.
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53339
 #if !defined(GCC_COMPILER)
 namespace {
@@ -119,7 +119,7 @@ struct umap_node {
 namespace fea {
 template <>
 inline std::pair<umap_node::iter, umap_node::iter> children_range(
-		umap_node::iter parent) {
+		umap_node::iter parent, const void*) {
 	return { parent->second.children.begin(), parent->second.children.end() };
 }
 } // namespace fea

@@ -1,15 +1,16 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.conan.txt)
 
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.15)
 project(fea_flat_recurse VERSION 1.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(GoogleTest)
-include(ExternalProject)
+include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 14)
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
 
 # Output binary to predictable location (fixes cyclic dependency issues).
 set(BINARY_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
@@ -29,6 +30,24 @@ set(DEPENDENCY_FOLDER "Dependencies")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER ${DEPENDENCY_FOLDER})
 
+
+# Compile Options
+function(set_compile_options REQUIRED_ARG EXPOSURE)
+	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Werror)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Werror)
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+	  # using Intel C++
+	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+		target_compile_definitions(${REQUIRED_ARG} ${EXPOSURE} NOMINMAX UNICODE _UNICODE)
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} /Zc:__cplusplus /Zc:alignedNew /permissive- /FAs /permissive- /W4 /WX /utf-8)
+		# set_target_properties(${REQUIRED_ARG} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
+endfunction()
+
+
+# Main Project
 file(GLOB_RECURSE HEADER_FILES "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp")
 add_library(${PROJECT_NAME} INTERFACE)
 target_sources(${PROJECT_NAME} INTERFACE
@@ -39,17 +58,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
-
-if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-	target_compile_options(${PROJECT_NAME} INTERFACE -Wall -Wextra -Wpedantic -Werror)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_compile_options(${PROJECT_NAME} INTERFACE -Wall -Wextra -Wpedantic -Werror)
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-	# using Intel C++
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-	target_compile_options(${PROJECT_NAME} INTERFACE /W4 /WX /EHsc /Zc:__cplusplus /FAs /permissive-)
-	target_compile_definitions(${PROJECT_NAME} INTERFACE NOMINMAX)
-endif()
+set_compile_options(${PROJECT_NAME} INTERFACE)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.clang-format ${CMAKE_CURRENT_BINARY_DIR}/.clang-format COPYONLY)
 
@@ -70,45 +79,24 @@ option(BUILD_TESTING "Build and run tests." On)
 if (${BUILD_TESTING})
 	enable_testing()
 
-	include(${CMAKE_BINARY_DIR}/conanbuildinfo_multi.cmake)
-	conan_basic_setup(TARGETS)
-	
-	set(TEST_NAME ${PROJECT_NAME}_tests)
-	file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp" "tests/*.c" "tests/*.hpp" "tests/*.h" "tests/*.tpp")
-	add_executable(${TEST_NAME} ${TEST_SOURCES})
-	# set_property(TARGET ${TEST_NAME} PROPERTY CXX_STANDARD 17) # simplify unit tests with if constexpr
-	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} CONAN_PKG::GTest)
-	gtest_discover_tests(${TEST_NAME})
-	add_dependencies(${TEST_NAME} ${PROJECT_NAME})
-
-	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments)
-	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-		target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
-	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-		# using Intel C++
-	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-		target_compile_options(${TEST_NAME} PRIVATE /W4 /WX /EHsc /Zc:__cplusplus /FAs /permissive-)
-		target_compile_definitions(${TEST_NAME} PRIVATE NOMINMAX)
-		set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME})
-	endif()
-
 	##
 	# External dependencies.
 	##
-	set(LIB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
-	target_include_directories(${TEST_NAME} PRIVATE ${LIB_INCLUDE_DIR})
-
-	ExternalProject_Add(bench_util_ext
+	FetchContent_Declare(bench_util
 		GIT_REPOSITORY https://github.com/p-groarke/bench_util.git
-		CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release
-			-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}
-			-DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}
-			-DBUILD_TESTING=Off
-		UPDATE_COMMAND ""
 	)
+	FetchContent_MakeAvailable(bench_util)
+	set_target_properties(bench_util_tests PROPERTIES FOLDER ${DEPENDENCY_FOLDER})
 
-	add_dependencies(${TEST_NAME} bench_util_ext)
-	set_target_properties(bench_util_ext PROPERTIES FOLDER ${DEPENDENCY_FOLDER})
+	find_package(GTest CONFIG REQUIRED)
+
+	set(TEST_NAME ${PROJECT_NAME}_tests)
+	file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp" "tests/*.c" "tests/*.hpp" "tests/*.h" "tests/*.tpp")
+	add_executable(${TEST_NAME} ${TEST_SOURCES})
+	set_compile_options(${TEST_NAME} PRIVATE)
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME})
+
+	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} GTest::GTest bench_util)
+	gtest_discover_tests(${TEST_NAME})
 
 endif() # BUILD_TESTING

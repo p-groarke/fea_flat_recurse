@@ -1,4 +1,4 @@
-#include "small_obj.hpp"
+﻿#include "small_obj.hpp"
 #include "global.hpp"
 #include "iterators.hpp"
 
@@ -7,7 +7,8 @@
 
 namespace fea {
 template <>
-inline std::pair<small_obj*, small_obj*> children_range(small_obj* parent) {
+inline std::pair<small_obj*, small_obj*> children_range(
+		small_obj* parent, const void*) {
 	if (parent->children.empty()) {
 		return { nullptr, nullptr };
 	}
@@ -18,7 +19,7 @@ inline std::pair<small_obj*, small_obj*> children_range(small_obj* parent) {
 
 template <>
 std::pair<input_it<small_obj>, input_it<small_obj>> children_range(
-		input_it<small_obj> root) {
+		input_it<small_obj> root, const void*) {
 	if (root->children.empty()) {
 		return { nullptr, nullptr };
 	}
@@ -31,7 +32,7 @@ std::pair<input_it<small_obj>, input_it<small_obj>> children_range(
 }
 template <>
 std::pair<bidir_it<small_obj>, bidir_it<small_obj>> children_range(
-		bidir_it<small_obj> root) {
+		bidir_it<small_obj> root, const void*) {
 	if (root->children.empty()) {
 		return { nullptr, nullptr };
 	}

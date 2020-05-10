@@ -1,4 +1,4 @@
-#include "global.hpp"
+﻿#include "global.hpp"
 #include "small_obj.hpp"
 
 #include <array>
@@ -13,7 +13,8 @@
 
 namespace fea {
 template <>
-inline std::pair<small_obj*, small_obj*> children_range(small_obj* parent) {
+inline std::pair<small_obj*, small_obj*> children_range(
+		small_obj* parent, const void*) {
 	if (parent->children.empty()) {
 		return { nullptr, nullptr };
 	}
@@ -41,118 +42,279 @@ void reserve_split_vec(
 	}
 }
 
-TEST(flat_recurse, benchmarks) {
-	{
-		size_t depth = 25;
-		size_t width = 2;
-		size_t num_nodes = node_count(depth, width);
-		// std::vector<small_obj> root_vec{ { nullptr } };
-		small_obj root{ nullptr };
-		root.create_graph(depth, width);
+constexpr bool sleep_between = true;
 
-		// Easier profiling
+namespace deep {
+size_t depth = 25;
+size_t width = 2;
+size_t num_nodes = node_count(depth, width);
+small_obj root{ nullptr };
+} // namespace deep
+
+namespace wide {
+size_t depth = 5;
+size_t width = 75;
+size_t num_nodes = node_count(depth, width);
+small_obj root{ nullptr };
+} // namespace wide
+
+TEST(flat_recurse, deep_gather_benchmarks) {
+	using namespace deep;
+	root.create_graph(depth, width);
+
+	// Easier profiling
+	if (sleep_between) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
 
-		bench::suite suite;
-		std::string title = "Small Objects - " + std::to_string(depth)
-				+ " deep, " + std::to_string(width)
-				+ " wide, total nodes : " + std::to_string(num_nodes);
+	std::string title_prefix = "Gather Small Objects - " + std::to_string(depth)
+			+ " deep, " + std::to_string(width) + " wide, "
+			+ std::to_string(num_nodes) + " nodes";
+
+	{
+		std::string title = title_prefix + " (with allocation cost)";
 
 		std::vector<small_obj*> out;
 		std::vector<std::vector<small_obj*>> out_split;
 
+		bench::suite suite;
 		suite.title(title.c_str());
+		suite.average(5);
 		suite.benchmark(
 				"recursion (depth)",
-				[&]() { fea::gather_depth_graph_recursive(&root, &out); }, 5,
+				[&]() { fea::gather_depthfirst(&root, &out); },
 				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
 					out = {};
 					out.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.benchmark(
 				"flat (depth)",
-				[&]() { out = fea::gather_depth_graph_flat(&root); }, 5,
+				[&]() { fea::gather_depthfirst_flat(&root, &out); },
 				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
 					out = {};
 					out.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.benchmark(
 				"flat (breadth)",
-				[&]() { out = fea::gather_breadth_graph(&root); }, 5,
+				[&]() { fea::gather_breadthfirst(&root, &out); },
 				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
 					out = {};
 					out.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.benchmark(
 				"flat (split breadth)",
-				[&]() { out_split = fea::gather_staged_breadth_graph(&root); },
-				5,
+				[&]() { fea::gather_breadthfirst_staged(&root, &out_split); },
 				[&]() {
+					EXPECT_EQ(out_split.size(), depth);
 					out_split = {};
 					out_split.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.print();
-		suite.clear();
 	}
 
 	{
-		size_t depth = 5;
-		size_t width = 75;
-		size_t num_nodes = node_count(depth, width);
-		small_obj root{ nullptr };
-		root.create_graph(depth, width);
+		std::string title = title_prefix + " (without allocation cost)";
 
-		// Easier profiling
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::vector<small_obj*> out;
+		out.reserve(num_nodes);
+		std::vector<std::vector<small_obj*>> out_split;
+		out_split.reserve(depth); // eh
 
 		bench::suite suite;
-		std::string title = "Small Objects - " + std::to_string(depth)
-				+ " deep, " + std::to_string(width)
-				+ " wide, total nodes : " + std::to_string(num_nodes);
+		suite.title(title.c_str());
+		suite.average(5);
+
+		suite.benchmark(
+				"recursion (depth)",
+				[&]() { fea::gather_depthfirst(&root, &out); },
+				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
+					out.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.benchmark(
+				"flat (depth)",
+				[&]() { fea::gather_depthfirst_flat(&root, &out); },
+				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
+					out.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.benchmark(
+				"flat (breadth)",
+				[&]() { fea::gather_breadthfirst(&root, &out); },
+				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
+					out.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.benchmark(
+				"flat (split breadth)",
+				[&]() { fea::gather_breadthfirst_staged(&root, &out_split); },
+				[&]() { EXPECT_EQ(out_split.size(), depth); });
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.print();
+	}
+}
+
+TEST(flat_recurse, wide_gather_benchmarks) {
+	using namespace wide;
+	root.create_graph(depth, width);
+
+	// Easier profiling
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+
+	std::string title_prefix = "Gather Small Objects - " + std::to_string(depth)
+			+ " deep, " + std::to_string(width) + " wide, "
+			+ std::to_string(num_nodes) + " nodes";
+
+	{
+		std::string title = title_prefix + " (with allocation cost)";
 
 		std::vector<small_obj*> out;
 		std::vector<std::vector<small_obj*>> out_split;
 
+		bench::suite suite;
 		suite.title(title.c_str());
+		suite.average(5);
 		suite.benchmark(
 				"recursion (depth)",
-				[&]() { fea::gather_depth_graph_recursive(&root, &out); }, 5,
+				[&]() { fea::gather_depthfirst(&root, &out); },
 				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
 					out = {};
 					out.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.benchmark(
 				"flat (depth)",
-				[&]() { out = fea::gather_depth_graph_flat(&root); }, 5,
+				[&]() { fea::gather_depthfirst_flat(&root, &out); },
 				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
 					out = {};
 					out.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.benchmark(
 				"flat (breadth)",
-				[&]() { out = fea::gather_breadth_graph(&root); }, 5,
+				[&]() { fea::gather_breadthfirst(&root, &out); },
 				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
 					out = {};
 					out.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.benchmark(
 				"flat (split breadth)",
-				[&]() { out_split = fea::gather_staged_breadth_graph(&root); },
-				5,
+				[&]() { fea::gather_breadthfirst_staged(&root, &out_split); },
 				[&]() {
+					EXPECT_EQ(out_split.size(), depth);
 					out_split = {};
 					out_split.shrink_to_fit();
 				});
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
 		suite.print();
-		suite.clear();
+	}
+
+	{
+		std::string title = title_prefix + " (without allocation cost)";
+
+		std::vector<small_obj*> out;
+		out.reserve(num_nodes);
+		std::vector<std::vector<small_obj*>> out_split;
+		out_split.reserve(depth);
+
+		bench::suite suite;
+		suite.title(title.c_str());
+		suite.average(5);
+		suite.benchmark(
+				"recursion (depth)",
+				[&]() { fea::gather_depthfirst(&root, &out); },
+				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
+					out.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.benchmark(
+				"flat (depth)",
+				[&]() { fea::gather_depthfirst_flat(&root, &out); },
+				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
+					out.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.benchmark(
+				"flat (breadth)",
+				[&]() { fea::gather_breadthfirst(&root, &out); },
+				[&]() {
+					EXPECT_EQ(out.size(), num_nodes);
+					out.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.benchmark(
+				"flat (split breadth)",
+				[&]() { fea::gather_breadthfirst_staged(&root, &out_split); },
+				[&]() {
+					EXPECT_EQ(out_split.size(), depth);
+					out_split.clear();
+				});
+		if (sleep_between) {
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+
+		suite.print();
 	}
 }
 } // namespace

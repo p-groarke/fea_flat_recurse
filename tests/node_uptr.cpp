@@ -1,4 +1,4 @@
-#include "node_uptr.hpp"
+﻿#include "node_uptr.hpp"
 #include "global.hpp"
 
 #include <fea_flat_recurse/fea_flat_recurse.hpp>
@@ -7,8 +7,7 @@
 namespace fea {
 template <>
 std::pair<std::unique_ptr<node_uptr>*, std::unique_ptr<node_uptr>*>
-children_range<std::unique_ptr<node_uptr>*>(
-		std::unique_ptr<node_uptr>* parent) {
+children_range(std::unique_ptr<node_uptr>* parent, const void*) {
 
 	if (parent->get()->children().empty()) {
 		return { nullptr, nullptr };
@@ -19,8 +18,7 @@ children_range<std::unique_ptr<node_uptr>*>(
 }
 template <>
 std::pair<const std::unique_ptr<node_uptr>*, const std::unique_ptr<node_uptr>*>
-children_range<const std::unique_ptr<node_uptr>*>(
-		const std::unique_ptr<node_uptr>* parent) {
+children_range(const std::unique_ptr<node_uptr>* parent, const void*) {
 
 	if (parent->get()->children().empty()) {
 		return { nullptr, nullptr };

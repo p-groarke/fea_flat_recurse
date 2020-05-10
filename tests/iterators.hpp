@@ -1,4 +1,4 @@
-#include "global.hpp"
+﻿#include "global.hpp"
 
 #include <fea_flat_recurse/fea_flat_recurse.hpp>
 #include <gtest/gtest.h>
@@ -15,6 +15,7 @@ struct input_it {
 	input_it(T* beg)
 			: _t(beg) {
 	}
+	input_it() = default;
 
 	bool operator==(const input_it& other) const {
 		return _t == other._t;
