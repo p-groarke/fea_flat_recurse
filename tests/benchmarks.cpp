@@ -48,18 +48,17 @@ namespace deep {
 size_t depth = 25;
 size_t width = 2;
 size_t num_nodes = node_count(depth, width);
-small_obj root{ nullptr };
 } // namespace deep
 
 namespace wide {
 size_t depth = 5;
 size_t width = 75;
 size_t num_nodes = node_count(depth, width);
-small_obj root{ nullptr };
 } // namespace wide
 
 TEST(flat_recurse, deep_gather_benchmarks) {
 	using namespace deep;
+	small_obj root{ nullptr };
 	root.create_graph(depth, width);
 
 	// Easier profiling
@@ -190,6 +189,7 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 
 TEST(flat_recurse, wide_gather_benchmarks) {
 	using namespace wide;
+	small_obj root{ nullptr };
 	root.create_graph(depth, width);
 
 	// Easier profiling
