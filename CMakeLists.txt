@@ -34,7 +34,7 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER ${DEPENDENCY_FOLDER})
 # Compile Options
 function(set_compile_options REQUIRED_ARG EXPOSURE)
 	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Werror)
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Werror -Wno-gnu-zero-variadic-macro-arguments)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} -Wall -Wextra -Wpedantic -Werror)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
@@ -75,8 +75,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}" DESTINAT
 
 
 # Tests
-option(BUILD_TESTING "Build and run tests." On)
-if (${BUILD_TESTING})
+option(FEAFLATRECURSE_TESTS "Build and run tests." On)
+if (${FEAFLATRECURSE_TESTS})
 	enable_testing()
 
 	##
@@ -99,4 +99,4 @@ if (${BUILD_TESTING})
 	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} GTest::GTest bench_util)
 	gtest_discover_tests(${TEST_NAME})
 
-endif() # BUILD_TESTING
+endif() # FEAFLATRECURSE_TESTS

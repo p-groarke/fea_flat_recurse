@@ -20,7 +20,7 @@ Install recent conan, cmake and compiler.
 ### Windows
 ```
 mkdir build && cd build
-cmake .. -A x64 -DBUILD_TESTING=On && cmake --build . --config debug
+cmake .. -A x64 -DFEAFLATRECURSE_TESTS=On && cmake --build . --config debug
 bin\fea_flat_recurse_tests.exe
 
 // Optionally
@@ -30,7 +30,7 @@ cmake --build . --target install
 ### Unixes
 ```
 mkdir build && cd build
-cmake .. -DBUILD_TESTING=On && cmake --build . --config debug
+cmake .. -DFEAFLATRECURSE_TESTS=On && cmake --build . --config debug
 bin\fea_flat_recurse_tests.exe
 
 // Optionally

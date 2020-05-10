@@ -24,6 +24,16 @@ install:
 matrix:
   include:
     - os: osx
+      osx_image: xcode11.2
+      env:
+        - MATRIX_EVAL="CC=clang && CXX=clang++ && CONFIG=Debug"
+
+    - os: osx
+      osx_image: xcode11.2
+      env:
+        - MATRIX_EVAL="CC=clang && CXX=clang++ && CONFIG=Release"
+
+    - os: osx
       osx_image: xcode11.3
       env:
         - MATRIX_EVAL="CC=clang && CXX=clang++ && CONFIG=Debug"
@@ -32,6 +42,30 @@ matrix:
       osx_image: xcode11.3
       env:
         - MATRIX_EVAL="CC=clang && CXX=clang++ && CONFIG=Release"
+
+    - os: linux
+      dist: bionic
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && CONFIG=Debug"
+
+    - os: linux
+      dist: bionic
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7 && CONFIG=Release"
 
     - os: linux
       dist: bionic
@@ -59,7 +93,7 @@ matrix:
 
 script:
   - mkdir build && cd build
-  - cmake .. -DBUILD_TESTING=On -DCMAKE_BUILD_TYPE=$CONFIG
+  - cmake .. -DFEAFLATRECURSE_TESTS=On -DCMAKE_BUILD_TYPE=$CONFIG
   - cmake --build . --config $CONFIG
   - ./bin/fea_flat_recurse_tests
 
