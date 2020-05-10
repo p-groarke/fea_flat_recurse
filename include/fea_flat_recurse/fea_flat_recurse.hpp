@@ -94,8 +94,8 @@ inline void for_each_depthfirst(
 
 template <class BidirIt, class Func, class CullPredicate,
 		class StatePtr = const void>
-__declspec(noinline) inline void for_each_depthfirst_flat(BidirIt root,
-		Func func, CullPredicate cull_pred, StatePtr* state_ptr = nullptr) {
+inline void for_each_depthfirst_flat(BidirIt root, Func func,
+		CullPredicate cull_pred, StatePtr* state_ptr = nullptr) {
 	static_assert(
 			!std::is_same<std::input_iterator_tag,
 					typename std::iterator_traits<BidirIt>::iterator_category>::
