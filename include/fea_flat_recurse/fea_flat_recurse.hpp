@@ -154,16 +154,16 @@ inline void for_each_depthfirst_flat(BidirIt root, Func func,
 			continue;
 		}
 
-		// push_back the non-culled children to be evaluated.
-		std::reverse_iterator<BidirIt> rbegin{ range.second };
-		std::reverse_iterator<BidirIt> rend{ range.first };
-
-		for (auto it = rbegin; it != rend; ++it) {
-			BidirIt real_it = it.base();
-			if (cull_pred(--real_it)) {
+		// Cull remaining children and enqueue in the stack back to front.
+		while (--range.second != range.first) {
+			if (cull_pred(range.second)) {
 				continue;
 			}
-			stack.push_back(real_it);
+			stack.push_back(range.second);
+		}
+
+		if (!cull_pred(range.first)) {
+			stack.push_back(range.first);
 		}
 	}
 }
