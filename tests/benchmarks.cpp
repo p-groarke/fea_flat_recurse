@@ -9,7 +9,8 @@
 #include <random>
 #include <thread>
 
-#if defined(NDEBUG)
+//#define FEA_DEBUG_BENCHMARKS
+#if defined(NDEBUG) || defined(FEA_DEBUG_BENCHMARKS)
 
 namespace fea {
 template <>
@@ -45,26 +46,31 @@ void reserve_split_vec(
 constexpr bool sleep_between = true;
 
 namespace deep {
+#if defined(NDEBUG)
 size_t depth = 25;
+#else
+size_t depth = 10;
+#endif
 size_t width = 2;
 size_t num_nodes = node_count(depth, width);
 } // namespace deep
 
 namespace wide {
 size_t depth = 5;
+#if defined(NDEBUG)
 size_t width = 75;
+#else
+size_t width = 30;
+#endif
 size_t num_nodes = node_count(depth, width);
 } // namespace wide
 
 TEST(flat_recurse, deep_gather_benchmarks) {
 	using namespace deep;
+	using namespace std::chrono_literals;
 	small_obj root{ nullptr };
 	root.create_graph(depth, width);
 
-	// Easier profiling
-	if (sleep_between) {
-		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
 
 	std::string title_prefix = "Gather Small Objects - " + std::to_string(depth)
 			+ " deep, " + std::to_string(width) + " wide, "
@@ -79,6 +85,12 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 		bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
+
+		if (sleep_between) {
+			// Easier profiling
+			suite.sleep_between(500ms);
+		}
+
 		suite.benchmark(
 				"recursion (depth)",
 				[&]() { fea::gather_depthfirst(&root, &out); },
@@ -87,9 +99,6 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					out = {};
 					out.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (depth)",
@@ -99,9 +108,6 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					out = {};
 					out.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (breadth)",
@@ -111,9 +117,6 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					out = {};
 					out.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (split breadth)",
@@ -123,9 +126,6 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					out_split = {};
 					out_split.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.print();
 	}
@@ -142,6 +142,11 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 		suite.title(title.c_str());
 		suite.average(5);
 
+		if (sleep_between) {
+			// Easier profiling
+			suite.sleep_between(500ms);
+		}
+
 		suite.benchmark(
 				"recursion (depth)",
 				[&]() { fea::gather_depthfirst(&root, &out); },
@@ -149,9 +154,6 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					EXPECT_EQ(out.size(), num_nodes);
 					out.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (depth)",
@@ -160,9 +162,6 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					EXPECT_EQ(out.size(), num_nodes);
 					out.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (breadth)",
@@ -171,17 +170,11 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 					EXPECT_EQ(out.size(), num_nodes);
 					out.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (split breadth)",
 				[&]() { fea::gather_breadthfirst_staged(&root, &out_split); },
 				[&]() { EXPECT_EQ(out_split.size(), depth); });
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.print();
 	}
@@ -189,6 +182,7 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 
 TEST(flat_recurse, wide_gather_benchmarks) {
 	using namespace wide;
+	using namespace std::chrono_literals;
 	small_obj root{ nullptr };
 	root.create_graph(depth, width);
 
@@ -208,6 +202,11 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 		bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
+
+		if (sleep_between) {
+			suite.sleep_between(500ms);
+		}
+
 		suite.benchmark(
 				"recursion (depth)",
 				[&]() { fea::gather_depthfirst(&root, &out); },
@@ -216,9 +215,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					out = {};
 					out.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (depth)",
@@ -228,9 +224,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					out = {};
 					out.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (breadth)",
@@ -240,9 +233,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					out = {};
 					out.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (split breadth)",
@@ -252,9 +242,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					out_split = {};
 					out_split.shrink_to_fit();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.print();
 	}
@@ -270,6 +257,11 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 		bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
+
+		if (sleep_between) {
+			suite.sleep_between(500ms);
+		}
+
 		suite.benchmark(
 				"recursion (depth)",
 				[&]() { fea::gather_depthfirst(&root, &out); },
@@ -277,9 +269,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					EXPECT_EQ(out.size(), num_nodes);
 					out.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (depth)",
@@ -288,9 +277,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					EXPECT_EQ(out.size(), num_nodes);
 					out.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (breadth)",
@@ -299,9 +285,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					EXPECT_EQ(out.size(), num_nodes);
 					out.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.benchmark(
 				"flat (split breadth)",
@@ -310,9 +293,6 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 					EXPECT_EQ(out_split.size(), depth);
 					out_split.clear();
 				});
-		if (sleep_between) {
-			std::this_thread::sleep_for(std::chrono::seconds(1));
-		}
 
 		suite.print();
 	}
