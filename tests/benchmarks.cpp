@@ -88,7 +88,7 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 
 		if (sleep_between) {
 			// Easier profiling
-			suite.sleep_between(500ms);
+			suite.sleep_between(1s);
 		}
 
 		suite.benchmark(
@@ -259,7 +259,7 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 		suite.average(5);
 
 		if (sleep_between) {
-			suite.sleep_between(500ms);
+			suite.sleep_between(1s);
 		}
 
 		suite.benchmark(
