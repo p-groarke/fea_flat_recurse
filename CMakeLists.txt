@@ -75,8 +75,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}" DESTINAT
 
 
 # Tests
-option(FEAFLATRECURSE_TESTS "Build and run tests." On)
-if (${FEAFLATRECURSE_TESTS})
+option(FEA_FLAT_RECURSE_TESTS "Build and run tests." On)
+if (${FEA_FLAT_RECURSE_TESTS})
 	enable_testing()
 
 	##
@@ -99,4 +99,4 @@ if (${FEAFLATRECURSE_TESTS})
 	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} GTest::GTest bench_util)
 	gtest_discover_tests(${TEST_NAME})
 
-endif() # FEAFLATRECURSE_TESTS
+endif() # FEA_FLAT_RECURSE_TESTS
