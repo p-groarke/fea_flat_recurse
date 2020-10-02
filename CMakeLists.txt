@@ -82,11 +82,11 @@ if (${FEA_FLAT_RECURSE_TESTS})
 	##
 	# External dependencies.
 	##
-	FetchContent_Declare(bench_util
-		GIT_REPOSITORY https://github.com/p-groarke/bench_util.git
+	FetchContent_Declare(fea_benchmark
+		GIT_REPOSITORY https://github.com/p-groarke/fea_benchmark.git
 	)
-	FetchContent_MakeAvailable(bench_util)
-	set_target_properties(bench_util_tests PROPERTIES FOLDER ${DEPENDENCY_FOLDER})
+	FetchContent_MakeAvailable(fea_benchmark)
+	set_target_properties(fea_benchmark_tests PROPERTIES FOLDER ${DEPENDENCY_FOLDER})
 
 	find_package(GTest CONFIG REQUIRED)
 
@@ -96,7 +96,7 @@ if (${FEA_FLAT_RECURSE_TESTS})
 	set_compile_options(${TEST_NAME} PRIVATE)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${TEST_NAME})
 
-	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} GTest::GTest bench_util)
+	target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAME} GTest::GTest fea_benchmark)
 	gtest_discover_tests(${TEST_NAME})
 
 endif() # FEA_FLAT_RECURSE_TESTS

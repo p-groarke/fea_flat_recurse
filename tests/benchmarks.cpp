@@ -2,8 +2,8 @@
 #include "small_obj.hpp"
 
 #include <array>
-#include <bench_util/bench_util.h>
 #include <chrono>
+#include <fea_benchmark/fea_benchmark.hpp>
 #include <fea_flat_recurse/fea_flat_recurse.hpp>
 #include <gtest/gtest.h>
 #include <random>
@@ -82,7 +82,7 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 		std::vector<small_obj*> out;
 		std::vector<std::vector<small_obj*>> out_split;
 
-		bench::suite suite;
+		fea::bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
 
@@ -138,7 +138,7 @@ TEST(flat_recurse, deep_gather_benchmarks) {
 		std::vector<std::vector<small_obj*>> out_split;
 		out_split.reserve(depth); // eh
 
-		bench::suite suite;
+		fea::bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
 
@@ -199,7 +199,7 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 		std::vector<small_obj*> out;
 		std::vector<std::vector<small_obj*>> out_split;
 
-		bench::suite suite;
+		fea::bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
 
@@ -254,7 +254,7 @@ TEST(flat_recurse, wide_gather_benchmarks) {
 		std::vector<std::vector<small_obj*>> out_split;
 		out_split.reserve(depth);
 
-		bench::suite suite;
+		fea::bench::suite suite;
 		suite.title(title.c_str());
 		suite.average(5);
 
