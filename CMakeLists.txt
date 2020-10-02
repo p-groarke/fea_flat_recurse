@@ -9,6 +9,8 @@ include(GoogleTest)
 include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 14)
+
+# Conan search path.
 set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR} ${CMAKE_MODULE_PATH})
 set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR} ${CMAKE_PREFIX_PATH})
 
@@ -30,7 +32,6 @@ set(DEPENDENCY_FOLDER "Dependencies")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER ${DEPENDENCY_FOLDER})
 
-
 # Compile Options
 function(set_compile_options REQUIRED_ARG EXPOSURE)
 	if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
@@ -41,26 +42,31 @@ function(set_compile_options REQUIRED_ARG EXPOSURE)
 	  # using Intel C++
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 		target_compile_definitions(${REQUIRED_ARG} ${EXPOSURE} NOMINMAX UNICODE _UNICODE)
-		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} /Zc:__cplusplus /Zc:alignedNew /permissive- /FAs /permissive- /W4 /WX /utf-8)
+		target_compile_options(${REQUIRED_ARG} ${EXPOSURE} /Zc:__cplusplus /Zc:alignedNew /permissive- /FAs /W4 /WX /utf-8)
 		# set_target_properties(${REQUIRED_ARG} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	endif()
 endfunction()
+
+# clang-format
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.clang-format ${CMAKE_CURRENT_BINARY_DIR}/.clang-format COPYONLY)
 
 
 # Main Project
 file(GLOB_RECURSE HEADER_FILES "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp")
 add_library(${PROJECT_NAME} INTERFACE)
+
+# To see files in IDE
 target_sources(${PROJECT_NAME} INTERFACE
-	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-	$<BUILD_INTERFACE:${HEADER_FILES}>
+	"$<BUILD_INTERFACE:${HEADER_FILES}>"
 )
+
+# Interface
 target_include_directories(${PROJECT_NAME} INTERFACE
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 set_compile_options(${PROJECT_NAME} INTERFACE)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/.clang-format ${CMAKE_CURRENT_BINARY_DIR}/.clang-format COPYONLY)
 
 # Install Package Configuration
 install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}_targets)
@@ -79,9 +85,7 @@ option(FEA_FLAT_RECURSE_TESTS "Build and run tests." On)
 if (${FEA_FLAT_RECURSE_TESTS})
 	enable_testing()
 
-	##
-	# External dependencies.
-	##
+	# Tests external dependencies.
 	FetchContent_Declare(fea_benchmark
 		GIT_REPOSITORY https://github.com/p-groarke/fea_benchmark.git
 	)
@@ -90,6 +94,8 @@ if (${FEA_FLAT_RECURSE_TESTS})
 
 	find_package(GTest CONFIG REQUIRED)
 
+
+	# Test Project
 	set(TEST_NAME ${PROJECT_NAME}_tests)
 	file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp" "tests/*.c" "tests/*.hpp" "tests/*.h" "tests/*.tpp")
 	add_executable(${TEST_NAME} ${TEST_SOURCES})
